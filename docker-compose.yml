@@ -1,0 +1,8 @@
+version: "3"
+services:
+  hardhat1:
+    build:
+      context: hardhat
+    ports:
+      - 8545:8545
+
