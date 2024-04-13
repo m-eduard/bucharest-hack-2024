@@ -12,7 +12,7 @@ for (( i=1; i<=num_nodes; i++ ))
 do
   port=$(($starting_port + i - 1))
   echo "Starting node on port $port"
-  npx hardhat node --port $port &
+  npx hardhat node --port $port & > /dev/null
 done
 
 echo "All nodes started in background."

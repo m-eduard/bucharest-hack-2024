@@ -7,7 +7,8 @@ async function main() {
     method: "hardhat_reset",
     params: [{
       forking: {
-        jsonRpcUrl: process.env.FORK_URL
+        jsonRpcUrl: process.env.FORK_URL,
+        blockNumber: Number(process.env.FORK_BLOCK_NUMBER)
       }
     }]
   });
