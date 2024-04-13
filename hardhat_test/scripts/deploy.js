@@ -2,11 +2,13 @@ async function main() {
     const [deployer] = await ethers.getSigners();
   
     console.log("Deploying contracts with the account:", deployer.address);
+
+    const contractInput = process.env.CONTRACT;
   
-    const Storage = await ethers.getContractFactory("Storage");
-    const storage = await Storage.deploy();
+    const Contract = await ethers.getContractFactory(contractInput);
+    const contract = await Contract.deploy();
   
-    console.log("Storage contract deployed to:", storage.address);
+    console.log(contractInput, " contract deployed to:", contract.address);
   }
   
   main().catch((error) => {

@@ -1,17 +1,14 @@
 function getFunctionSelector(functionSignature) {
-    return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(functionSignature)).slice(0, 10); // first 4 bytes (8 characters + '0x')
+    return ethers.utils.keccak256(ethers.utils.toUtf8Bytes(functionSignature)).slice(0, 10);
 }
-
-
 
 async function main() {
     const [signer] = await ethers.getSigners();
     const provider = signer.provider;
 
-    const storageAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
+    const storageAddress = process.env.STORAGE_ADDRESS;
 
     const callData = getFunctionSelector("retrieve()");
-    // const callData = getFunctionSelector("store(uint256)") + ethers.utils.defaultAbiCoder.encode(["uint256"], [123]).slice(2);
     
     const transaction = {
         to: storageAddress,

@@ -7,7 +7,7 @@ async function main() {
     method: "hardhat_reset",
     params: [{
       forking: {
-        jsonRpcUrl: "http://127.0.0.1:8545",
+        jsonRpcUrl: process.env.FORK_URL
       }
     }]
   });

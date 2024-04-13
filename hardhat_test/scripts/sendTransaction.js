@@ -4,11 +4,18 @@ function encodeFunctionCall(functionSignature, parameters) {
 }
 
 async function main() {
-    const provider = new ethers.providers.JsonRpcProvider(); // Connect to your provider
-    const signer = provider.getSigner(); // Ensure the signer is configured correctly in your Hardhat setup
+    const provider = new ethers.providers.JsonRpcProvider();
+    const signer = provider.getSigner();
 
-    const storageAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3"; // Replace with your deployed contract address
-    const encodedData = encodeFunctionCall("function store(uint256 num)", [123]); // Replace 123 with your desired number
+    const storageAddress = process.env.STORAGE_ADDRESS;
+    const functionCall = process.env.FUNCTION_CALL || "count";
+    let encodedData = "";
+    if (functionCall == "store") {
+        let randNum = Math.floor(Math.random() * 100);
+        encodedData = encodeFunctionCall("function store(uint256 num)", [randNum]);
+    } else if (functionCall == "count") {
+        encodedData = encodeFunctionCall("function count()", []);
+    }
 
     const tx = {
         to: storageAddress,
