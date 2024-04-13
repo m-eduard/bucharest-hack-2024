@@ -1,8 +1,13 @@
 version: "3"
 services:
-  hardhat1:
+  hardhat_1:
     build:
       context: hardhat
+    image: hardhat/node
     ports:
       - 8545:8545
+  hardhat_2:
+    image: hardhat/node
+    ports:
+      - 8546:8545
 
