@@ -7,6 +7,7 @@ from datetime import datetime as dt
 import requests
 import json
 
+s = requests.Session()
 
 json_rpc_payload = {
     "jsonrpc": "2.0",
@@ -48,8 +49,8 @@ def modify_request_for_block_number(original_request, block_number):
     time_taken_ms = end_time - start_time
 
     # Print the modified request and time taken
-    print(f"modified_request: {modified_request}")
-    print(f"Time taken: {time_taken_ms:.6f} milliseconds")
+    # print(f"modified_request: {modified_request}")
+    # print(f"Time taken: {time_taken_ms:.6f} milliseconds")
 
     return modified_request
 
@@ -101,7 +102,7 @@ def load_balance(q, node_pool: Dict[str, str]):
         }
         request_from_client = modify_request_for_block_number(request_from_client, cvorum_level)
 
-        resp = requests.post(
+        resp = s.post(
                 f"http://{node_pool[available_nodes[current_idx]]}",
                 headers={"Content-Type": "application/json", 'Accept': 'text/plain'},
                 data=json.dumps(request_from_client),
@@ -119,8 +120,14 @@ def nodes_monitor(q, node_pool: Dict[str, str]):
     cvorum_lvl = 0
     prev_cvorum_lvl = 0
 
+    nodes_num_blocks = {}
+
+    latest_change_idx = -1
+    latest_change_idxes = []
+
+    iter_no = 0
+
     while True:
-        nodes_num_blocks = {}
         node_levels = defaultdict(int)
         status_node_msg = ""
         
@@ -141,10 +148,29 @@ def nodes_monitor(q, node_pool: Dict[str, str]):
             resp_json = resp.json()
             num_blocks = int(resp_json["result"], 0)
 
+            old_num_blocks = nodes_num_blocks[node] if node in nodes_num_blocks else 0
+            if old_num_blocks != num_blocks:
+                latest_change_idx = node
+                latest_change_idxes.append(node)
+                if (len(latest_change_idxes) > 10):
+                    latest_change_idxes.pop(0)
+
             nodes_num_blocks[node] = num_blocks
             node_levels[num_blocks] += 1
+            
+            nice_format = ""
+            for elem in latest_change_idxes:
+                nice_format += "   " if elem != node else "(+)"
 
-            status_node_msg += f"Node {node} has {num_blocks} blocks\n"
+            idx_of_current_node_in_change_context = latest_change_idxes.index(node) if node in latest_change_idxes else -1
+            if idx_of_current_node_in_change_context == -1 or iter_no < 10:
+                nice_format = ""
+
+            status_node_msg += f"\tNode {node} has {nodes_num_blocks[node]} blocks {nice_format}\n"
+
+            
+            # status_node_msg += f"\tNode {node} has {num_blocks} blocks {'(+)' if node == latest_change_idx else ''}\n"
+            iter_no += 1
             
         prev_cvorum_lvl = cvorum_lvl
         cvorum_lvl = compute_cvorum_level(node_levels, len(node_pool))
@@ -162,12 +188,16 @@ def nodes_monitor(q, node_pool: Dict[str, str]):
                 q.put(node_id)
         else:
             q.put(0)
+
         
         current_time = dt.now()
-        print(current_time, status_node_msg)
-        print(current_time, f"Cvorum level is: {cvorum_lvl}")
-        print(current_time, f"{len(ls)} available servers with >= {cvorum_lvl} blocks")
-
+        print("\n" + str(current_time), "\n" + "Node Monitor Status Report","\n"+ 
+            status_node_msg +
+            f"Cvorum level is: {cvorum_lvl}" + "\n" +
+            f"{len(ls)} available servers with >= {cvorum_lvl} blocks" + "\n" +
+            " ".join(map(str, range(1,11))) + "\n" +
+            " ".join(map(lambda x:(str(x + 1) if nodes_num_blocks[x] >= cvorum_lvl else " "), range(0,10))) + "\n"
+        )
         time.sleep(0.1)
 
 

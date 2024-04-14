@@ -1,11 +1,13 @@
-import sys
 import subprocess
+import sys
 from time import sleep
+
 from faker import Faker
 
 contract_address = "0x5fbdb2315678afecb367f032d93f642f64180aa3"
 nr_servers = 10
 contract = "Counter"
+Faker.seed(6969)
 fake = Faker()
 
 nodes_state = dict(
@@ -37,24 +39,16 @@ def wait_alive(url):
 
 get_data = "STORAGE_ADDRESS={} npx hardhat run scripts/ethCall.js --network {}"
 
-# fork_data = "FORK_URL={} FORK_BLOCK_NUMBER={} npx hardhat run scripts/forkingNode.js --network {}"
-# fork_data = "./kill_and_fork.sh {} {} {}"
-
-def kill_and_fork(target_port, from_url, block_number, current_blocks, random_node) -> subprocess.CompletedProcess:
-    # fork_data_cmd = f"./kill_and_fork.sh {target_port} {from_url} {block_number}"
+def send_new_transaction_to_node(target_port, from_url, block_number, current_blocks, random_node) -> subprocess.CompletedProcess:
     for i in range(block_number - current_blocks): 
         cmd = create_contract.format(contract, network[random_node])
-    # print(fork_data_cmd)
-        res = subprocess.run(cmd, shell=True)
-    # sleep(3)
-    # wait_alive(f"local{target_port-8545+1}")
+        subprocess.run(cmd, shell=True)
 
 if __name__ == "__main__":
     for i in range(nr_servers):
         create_contract_cmd = create_contract.format(contract, network[i])
         subprocess.run(create_contract_cmd, shell=True)
         nodes_state[i] += 1
-    # initialised_nodes[0] = True
 
     sleep(1)
 
@@ -64,11 +58,8 @@ if __name__ == "__main__":
 
     # initialise the rest of the nodes
     for i in range(1, nr_servers // 2 + 1):
-        # fork_data_cmd = fork_data.format(i + 8545,  network_ip[0], nodes_state[0])
-        # subprocess.run(fork_data_cmd, shell=True)
-        kill_and_fork(i + 8545, network_ip[0], nodes_state[0], 0, i)
+        send_new_transaction_to_node(i + 8545, network_ip[0], nodes_state[0], 0, i)
         nodes_state[i] = nodes_state[0]
-        # initialised_nodes[i] = True
     
     cvorum_level = 1
     print(f"Reached cvorum level {cvorum_level}")
@@ -84,13 +75,15 @@ if __name__ == "__main__":
             while nodes_state[random_node] == nodes_state[most_recent_updated_node]:
                 random_node = fake.random_int(min=0, max=nr_servers - 1)
 
-            kill_and_fork(random_node + 8545, network_ip[most_recent_updated_node], nodes_state[random_node] + 1, nodes_state[random_node], random_node)
-
-            # fork_data_cmd = fork_data.format(random_node + 8545, network_ip[most_recent_updated_node], nodes_state[random_node] + 1)
-            print(f"Updateing node {random_node} to level {nodes_state[random_node]} from node {most_recent_updated_node}")
-            # res = subprocess.run(fork_data_cmd, shell=True)
-            # print(f"DONE with {res.returncode}")
-
+            send_new_transaction_to_node(
+                random_node + 8545,
+                network_ip[most_recent_updated_node],
+                nodes_state[random_node] + 1,
+                nodes_state[random_node],
+                random_node
+            )
+            
+            print(f"Updating node {random_node} to level {nodes_state[random_node]} from node {most_recent_updated_node}")
             nodes_state[random_node] += 1
         else:
             most_recent_updated_node = random_node
@@ -99,8 +92,7 @@ if __name__ == "__main__":
                 nodes_state[random_node] += 1
                 create_contract_cmd = create_contract.format(contract, network[random_node])
                 print(f"Increasing node {random_node} to level {nodes_state[random_node]}")
-                res = subprocess.run(create_contract_cmd, shell=True)
-                print(f"DONE with {res.returncode}")
+                subprocess.run(create_contract_cmd, shell=True)
 
 
         cnt_dict = dict()
@@ -119,11 +111,12 @@ if __name__ == "__main__":
                 if nodes_state[i] == cvorum_level:
                     continue
 
-                # fork_data_cmd = fork_data.format(i + 8545, network_ip[most_recent_updated_node], cvorum_level)
-                print(f"Updateing node {random_node} to level {nodes_state[random_node]} from node {most_recent_updated_node}")
-                # res = subprocess.run(fork_data_cmd, shell=True)
-                kill_and_fork(i + 8545, network_ip[most_recent_updated_node], cvorum_level, nodes_state[i], random_node)
-                # print(f"DONE with {res.returncode}")
+                print(f"Updating node {random_node} to level {nodes_state[random_node]} from node {most_recent_updated_node}")
+                send_new_transaction_to_node(
+                    i + 8545,
+                    network_ip[most_recent_updated_node],
+                    cvorum_level,
+                    nodes_state[i],
+                    random_node
+                )
                 nodes_state[i] = cvorum_level
-                # initialised_nodes[i] = True
-            
