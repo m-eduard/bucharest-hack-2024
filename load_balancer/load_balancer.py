@@ -1,8 +1,13 @@
 import multiprocessing
 import time
 from typing import Dict
+from flask import Flask, request, jsonify
 
 import requests
+
+app = Flask(__name__)
+
+cvorum_level = 0
 
 # We aim to send the requests to almost all of the nodes in the network]
 # (meaning the nodes which have a block height greater than the cvorum of the network)
@@ -21,17 +26,28 @@ import requests
 def load_balance(q, node_pool: Dict[str, str]):
     nodes_health = {node: "Healthy" for node in node_pool}
 
+    available_nodes = []
+
     while True:
         print("Load balancing ...")
-        time.sleep(12)
+        item = q.get()
 
+        for i in range(item):
+            available_nodes.append(q.get())
+
+        i
+
+        
 
 def nodes_monitor(q, node_pool: Dict[str, str]):
     global_max_num_nodes = 0
-
+    
+    node_levels = {}
     while True:
+        nodes_num_blocks = {}
+        
         for node, node_ip in node_pool.items():
-            rpc_json_load = {
+            node_data_request = {
                 "jsonrpc": "2.0",
                 "method": "eth_blockNumber",
                 "params": [],
@@ -41,16 +57,42 @@ def nodes_monitor(q, node_pool: Dict[str, str]):
             resp = requests.post(
                 node_ip,
                 headers={"Content-Type": "application/json"},
-                json=rpc_json_load,
+                json=node_data_request,
             )
+
             print(resp.text)
+            print(resp)
+
+            nodes_num_blocks[node] = resp.text
+            node_levels[resp.data] += 1
+
+        cvorum_lvl = compute_cvorum_level(node_levels, len(node_pool))
+
+        ls = []
+        if cvorum_level != -1:
+            for node_id in node_pool:
+                if nodes_num_blocks[node_id] >= len(node_pool) // 2:
+                    ls.append(node_id)
+
+            q.put(len(ls))
+
+            for node_id in ls:
+                q.put(node_id)
 
         print("Monitoring ...")
         time.sleep(12)
 
 
+def compute_cvorum_level(node_levels, num_nodes):
+    for node_level in node_levels:
+        if node_levels[node_level] > num_nodes // 2:
+            return node_level
+        
+    return -1
+
+
 class LoadBalancer:
-    def __init__(self, node_pool: Dict[str, str]):
+    def __init__(self, node_pool: Dict[int, str]):
         """Each node has the IP address of the RPC server associated"""
         self.node_pool = node_pool
 
@@ -64,6 +106,13 @@ class LoadBalancer:
         )
 
         self.procs = [self.load_balancing_proc, self.nodes_monitor_proc]
+
+
+@app.route('/rpc', methods=['POST'])
+def load_balance():
+    data = request.get_json()
+
+
 
 
 class RPCFactory:
@@ -91,7 +140,8 @@ class RPCFactory:
 # for a specific node
 
 if __name__ == "__main__":
-    nodes = []
+    nodes = {0:"127.0.0.1:8545"}
+
     lb = LoadBalancer(nodes)
 
     for proc in lb.procs:
