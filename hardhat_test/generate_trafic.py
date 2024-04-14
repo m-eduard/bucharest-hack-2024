@@ -43,7 +43,7 @@ get_data = "STORAGE_ADDRESS={} npx hardhat run scripts/ethCall.js --network {}"
 def kill_and_fork(target_port, from_url, block_number, current_blocks, random_node) -> subprocess.CompletedProcess:
     # fork_data_cmd = f"./kill_and_fork.sh {target_port} {from_url} {block_number}"
     for i in range(block_number - current_blocks): 
-        cmd = send_transaction.format(contract_address, network[random_node])
+        cmd = create_contract.format(contract, network[random_node])
     # print(fork_data_cmd)
         res = subprocess.run(cmd, shell=True)
     # sleep(3)
@@ -58,8 +58,8 @@ if __name__ == "__main__":
 
     sleep(1)
 
-    send_transaction_cmd = send_transaction.format(contract_address, network[0])
-    subprocess.run(send_transaction_cmd, shell=True)
+    create_contract_cmd = create_contract.format(contract, network[0])
+    subprocess.run(create_contract_cmd, shell=True)
     nodes_state[0] += 1
 
     # initialise the rest of the nodes
@@ -97,9 +97,9 @@ if __name__ == "__main__":
             inc_value = 3
             for i in range(inc_value):
                 nodes_state[random_node] += 1
-                send_transaction_cmd = send_transaction.format(contract_address, network[random_node])
+                create_contract_cmd = create_contract.format(contract, network[random_node])
                 print(f"Increasing node {random_node} to level {nodes_state[random_node]}")
-                res = subprocess.run(send_transaction_cmd, shell=True)
+                res = subprocess.run(create_contract_cmd, shell=True)
                 print(f"DONE with {res.returncode}")
 
 
