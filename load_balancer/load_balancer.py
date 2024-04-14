@@ -195,8 +195,8 @@ def nodes_monitor(q, node_pool: Dict[str, str]):
             status_node_msg +
             f"Cvorum level is: {cvorum_lvl}" + "\n" +
             f"{len(ls)} available servers with >= {cvorum_lvl} blocks" + "\n" +
-            " ".join(map(str, range(1,11))) + "\n" +
-            " ".join(map(lambda x:(str(x + 1) if nodes_num_blocks[x] >= cvorum_lvl else " "), range(0,10))) + "\n"
+            "Nodes:      " + " ".join(map(str, range(1,11))) + "\n" +
+            "Available:  " + " ".join(map(lambda x:(str(x + 1) if nodes_num_blocks[x] >= cvorum_lvl else " "), range(0,10))) + "\n"
         )
         time.sleep(0.1)
 
